@@ -10,8 +10,14 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-# fitbuddy.db lives in the project root (override with DATABASE_URL if needed)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'fitbuddy.db').as_posix()}")
+# On Vercel serverless, only /tmp is writable; fall back to /tmp/fitbuddy.db
+_default_db = (
+    "sqlite:////tmp/fitbuddy.db"
+    if os.getenv("VERCEL")
+    else f"sqlite:///{(BASE_DIR / 'fitbuddy.db').as_posix()}"
+)
+DATABASE_URL = os.getenv("DATABASE_URL", _default_db)
+
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
